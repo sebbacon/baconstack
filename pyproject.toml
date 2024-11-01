@@ -42,5 +42,6 @@ lint.extend-select = [
 
 [tool.uv]
 dev-dependencies = [
+    "aider-chat>=0.60.1",
     "pytest>=8.3.3",
 ]
