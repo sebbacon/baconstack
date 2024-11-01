@@ -116,12 +116,12 @@ def new(
         "domain": domain or f"{project_name}.example.com",
         "healthcheck_url": healthcheck_url or "",
     }
-    
+
     # Build copier command with proper data escaping
-    cmd = ["copier", "copy", template_repo, project_name]
+    cmd = ["copier", "copy", template_repo, project_name, "--trust"]
     for key, value in data.items():
         cmd.extend(["-d", f"{key}={value}"])
-    
+
     try:
         subprocess.run(cmd, check=True)
     except subprocess.CalledProcessError as e:
