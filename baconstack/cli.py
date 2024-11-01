@@ -134,6 +134,9 @@ def setup(
     project_name: str,
     domain: str,
     dokku_host: str = typer.Option(..., envvar="DOKKU_HOST"),
+    dokku_user: str = typer.Option(
+        "seb", help="Username for Dokku host SSH connection"
+    ),
     do_token: str = typer.Option(None, envvar="DO_API_KEY"),
     healthcheck_url: str = typer.Option(None, envvar="HEALTHCHECK_URL"),
 ):
@@ -146,37 +149,13 @@ def setup(
     # Connect to Dokku host
     ssh = paramiko.SSHClient()
     ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-    ssh.connect(dokku_host)
+    ssh.connect(dokku_host, username=dokku_user)
 
     # Set up APT packages if specified
     apt_packages = app_config.get("dokku", {}).get("apt-packages", [])
     if apt_packages:
         console.print(f"Setting up APT packages: {', '.join(apt_packages)}")
         setup_apt_packages(ssh, project_name, apt_packages)
-
-    # Basic Dokku setup
-    commands = [
-        f"dokku apps:create {project_name}",
-        f"dokku domains:add {project_name} {domain}",
-        # Storage setup
-        f"dokku storage:ensure-directory {project_name}",
-        f"dokku storage:mount {project_name} /var/lib/dokku/data/storage/{project_name}:/app/data",
-        # SSL setup
-        "dokku plugin:install https://github.com/dokku/dokku-letsencrypt.git",
-        f"dokku letsencrypt:set {project_name} email admin@{domain}",
-        f"dokku letsencrypt:enable {project_name}",
-        f"dokku letsencrypt:auto-renew {project_name}",
-    ]
-
-    for cmd in commands:
-        stdin, stdout, stderr = ssh.exec_command(f"sudo {cmd}")
-        console.print(stdout.read().decode())
-        if stderr.read():
-            console.print(f"[red]Error running {cmd}[/red]")
-
-    # Set up healthcheck
-    if healthcheck_url or app_config.get("healthchecks"):
-        setup_healthcheck(project_name, healthcheck_url, ssh)
 
     # Set up DNS if DO token provided
     if do_token:
@@ -193,14 +172,38 @@ def setup(
             )
             return
 
-        # Create A record
+        # Create CNAME record
         do_domain.create_new_domain_record(
-            type="A",
+            type="CNAME",
             name=record_name,
-            data=dokku_host,
+            data=dokku_host + ".",
         )
 
         console.print(f"[green]Created DNS record for {domain}[/green]")
+
+    # Basic Dokku setup
+    commands = [
+        f"dokku apps:create {project_name}",
+        f"dokku domains:add {project_name} {domain}",
+        # Storage setup
+        f"dokku storage:ensure-directory {project_name}",
+        f"dokku storage:mount {project_name} /var/lib/dokku/data/storage/{project_name}:/app/data",
+        # SSL setup
+        "dokku plugin:install https://github.com/dokku/dokku-letsencrypt.git",
+        f"dokku letsencrypt:set {project_name} email seb@bacon.boutique",
+        f"dokku letsencrypt:enable {project_name}",
+        f"dokku letsencrypt:auto-renew {project_name}",
+    ]
+
+    for cmd in commands:
+        stdin, stdout, stderr = ssh.exec_command(f"sudo {cmd}")
+        console.print(stdout.read().decode())
+        if err := stderr.read():
+            console.print(f"[red]Error running {cmd}[/red] {err}")
+
+    # Set up healthcheck
+    if healthcheck_url or app_config.get("healthchecks"):
+        setup_healthcheck(project_name, healthcheck_url, ssh)
 
 
 @app.command()
