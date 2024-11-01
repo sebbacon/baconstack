@@ -31,11 +31,16 @@ build-backend = "hatchling.build"
 
 [tool.ruff]
 line-length = 88
-extend-select = [
+lint.extend-select = [
     "A",    # flake8-builtins
     "I",    # isort
     "INP",  # flake8-no-pep420
     "ISC",  # flake8-implicit-str-concat
     "UP",   # pyupgrade
     "W",    # pycodestyle warning
+]
+
+[tool.uv]
+dev-dependencies = [
+    "pytest>=8.3.3",
 ]

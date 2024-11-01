@@ -1,17 +1,16 @@
 # baconstack/cli.py
-import typer
+import json
+import os
 import subprocess
 from pathlib import Path
-import json
-from typing import List, Optional, Dict
+
+import digitalocean
+import paramiko
+import typer
+from dotenv import dotenv_values
 from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
-import paramiko
-from dotenv import dotenv_values
-import os
-import digitalocean
-import yaml
 
 app = typer.Typer()
 console = Console()
@@ -25,14 +24,14 @@ def read_app_json(project_dir: Path) -> dict:
     return json.loads(app_json_path.read_text())
 
 
-def load_env_file(env_file: Path) -> Dict[str, str]:
+def load_env_file(env_file: Path) -> dict[str, str]:
     """Load environment variables from .env file"""
     if not env_file.exists():
         return {}
     return dotenv_values(env_file)
 
 
-def filter_sensitive_vars(env_vars: Dict[str, str]) -> Dict[str, str]:
+def filter_sensitive_vars(env_vars: dict[str, str]) -> dict[str, str]:
     """Filter out sensitive variables for display"""
     sensitive_patterns = ["KEY", "SECRET", "PASSWORD", "CREDENTIAL"]
     return {
@@ -45,7 +44,7 @@ def filter_sensitive_vars(env_vars: Dict[str, str]) -> Dict[str, str]:
     }
 
 
-def setup_apt_packages(ssh: paramiko.SSHClient, project_name: str, packages: List[str]):
+def setup_apt_packages(ssh: paramiko.SSHClient, project_name: str, packages: list[str]):
     """Set up APT packages for Dokku app"""
     if not packages:
         return
