@@ -110,23 +110,23 @@ def new(
     )
 
     # Use copier to create project from template
-    subprocess.run(
-        [
-            "copier",
-            "copy",
-            template_repo,
-            project_name,
-            "-d",
-            f"framework={framework}",
-            "-d",
-            f"project_name={project_name}",
-            "-d",
-            f"domain={domain or f'{project_name}.example.com'}",
-            "-d",
-            f"healthcheck_url={healthcheck_url or ''}",
-        ],
-        check=True,
-    )
+    data = {
+        "framework": framework,
+        "project_name": project_name,
+        "domain": domain or f"{project_name}.example.com",
+        "healthcheck_url": healthcheck_url or "",
+    }
+    
+    # Build copier command with proper data escaping
+    cmd = ["copier", "copy", template_repo, project_name]
+    for key, value in data.items():
+        cmd.extend(["-d", f"{key}={value}"])
+    
+    try:
+        subprocess.run(cmd, check=True)
+    except subprocess.CalledProcessError as e:
+        console.print(f"[red]Error creating project: {e}[/red]")
+        raise typer.Exit(1)
 
 
 @app.command()
