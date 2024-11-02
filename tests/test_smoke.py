@@ -65,27 +65,16 @@ def test_flask_template(project_dir):
         assert result.exit_code == 0 or "pre-commit" in result.stdout
 
         assert os.path.exists("test_project"), "'test_project/' was not created"
-        project_path = os.path.join(os.getcwd(), "test_project")
-        # Create and activate virtual environment
-        venv_path = os.path.join(project_path, ".venv")
-        subprocess.run(["python3", "-m", "venv", venv_path], check=True)
-        
-        if os.name == "nt":  # Windows
-            activate_script = os.path.join(venv_path, "Scripts", "activate.bat")
-            activate_cmd = f"call {activate_script} && "
-        else:  # Unix-like
-            activate_script = os.path.join(venv_path, "bin", "activate")
-            activate_cmd = f"source {activate_script} && "
+        os.chdir("test_project")
+
+        subprocess.run("just install", shell=True, check=True)
 
         # Install dependencies
-        subprocess.run(activate_cmd + "pip install -e '.[dev]'", shell=True, check=True)
-
-        # Run tests
-        subprocess.run(activate_cmd + "pytest", shell=True, check=True)
+        subprocess.run("just test", shell=True, check=True)
 
         # Start the Flask app in the background
         process = subprocess.Popen(
-            activate_cmd + "flask run --port 8001",
+            "just dev",
             shell=True,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
@@ -157,7 +146,10 @@ def test_dokku_deployment(project_dir):
             result = runner.invoke(
                 app,
                 ["destroy", test_app_name, "--force"],
-                env={"DOKKU_HOST": os.getenv("DOKKU_HOST"), "DO_API_KEY": os.getenv("DO_API_KEY")},
+                env={
+                    "DOKKU_HOST": os.getenv("DOKKU_HOST"),
+                    "DO_API_KEY": os.getenv("DO_API_KEY"),
+                },
             )
             if result.exit_code != 0:
                 print(f"Warning: Failed to cleanup test app {test_app_name}")
