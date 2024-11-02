@@ -48,6 +48,9 @@ def test_flask_template(project_dir):
     os.chdir(project_dir)
 
     try:
+        # Run tests first
+        subprocess.run(["just", "test"], check=True)
+
         # Start the Flask app in the background
         process = subprocess.Popen(
             ["just", "dev"],
