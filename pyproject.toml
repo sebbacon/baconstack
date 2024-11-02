@@ -1,6 +1,6 @@
 [project]
 name = "baconstack"
-version = "0.1.0"
+version = "0.2.0"
 description = "CLI tool for creating and managing Python web applications with Dokku deployment"
 requires-python = ">=3.11"
 authors = [{ name = "Seb Bacon", email = "seb@example.com" }]
