@@ -13,14 +13,20 @@ runner = CliRunner()
 def mock_ssh():
     with patch("paramiko.SSHClient") as mock:
         # Configure the mock to return success for exec_command
+        # Mock stdout/stderr as bytes objects
         mock_stdin = StringIO()
-        mock_stdout = StringIO("Success")
-        mock_stderr = StringIO("")
+        mock_stdout = StringIO()
+        mock_stderr = StringIO()
         
+        # Configure the mock's read() methods to return bytes
+        mock_stdout.read = lambda: b"Success"
+        mock_stderr.read = lambda: b""
+        
+        # Set up the mock to return our configured streams
         mock.return_value.exec_command.return_value = (
             mock_stdin,
-            mock_stdout,
-            mock_stderr,
+            mock_stdout, 
+            mock_stderr
         )
         yield mock
 
@@ -61,10 +67,17 @@ def test_basic_setup(mock_ssh):
 def test_setup_error_handling(mock_ssh):
     """Test handling of SSH errors during setup"""
     # Configure mock to simulate an error
+    # Configure mock with error response
+    mock_stdin = StringIO()
+    mock_stdout = StringIO()
+    mock_stderr = StringIO()
+    mock_stderr.read = lambda: b"Error: App already exists"
+    mock_stdout.read = lambda: b""
+        
     mock_ssh.return_value.exec_command.return_value = (
-        StringIO(),
-        StringIO(),
-        StringIO("Error: App already exists"),
+        mock_stdin,
+        mock_stdout,
+        mock_stderr,
     )
     
     result = runner.invoke(
