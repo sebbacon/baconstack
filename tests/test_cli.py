@@ -41,6 +41,7 @@ def test_setup_command(mock_ssh, mock_do_manager):
             "testapp",
             "test.example.com",
             "--dokku-host", "dokku.example.com",
+            "--dokku-user", "testuser",
             "--do-token", "fake-token",
         ],
     )
