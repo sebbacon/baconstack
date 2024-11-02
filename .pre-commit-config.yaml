@@ -5,3 +5,44 @@ repos:
       - id: ruff
         args: [ --fix ]
       - id: ruff-format
+
+  - repo: local
+    hooks:
+      - id: pytest-non-slow
+        name: pytest (no slow tests)
+        entry: pytest -v -m "not slow"
+        language: system
+        types: [python]
+        pass_filenames: false
+        stages: [push]
+
+      - id: pytest-all-periodic
+        name: pytest (all tests, every 5 pushes)
+        entry: python -c "
+          import json;
+          import os;
+          import subprocess;
+          import sys;
+          
+          count_file = '.pytest_push_count'
+          try:
+              with open(count_file, 'r') as f:
+                  count = json.load(f)
+          except FileNotFoundError:
+              count = 0
+          
+          count = (count + 1) % 5
+          with open(count_file, 'w') as f:
+              json.dump(count, f)
+          
+          if count == 0:
+              print('Running all tests (5th push)...')
+              sys.exit(subprocess.call(['pytest', '-v']))
+          else:
+              print(f'Skipping full test suite (push {count}/5)')
+              sys.exit(0)
+          "
+        language: system
+        types: [python]
+        pass_filenames: false
+        stages: [push]

@@ -24,3 +24,6 @@ ENV/
 env.bak/
 venv.bak/
 .python-version
+
+# Test tracking
+.pytest_push_count
