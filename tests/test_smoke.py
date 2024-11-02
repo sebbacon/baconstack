@@ -11,7 +11,11 @@ import shutil
 import signal
 from pathlib import Path
 from typer.testing import CliRunner
+from dotenv import load_dotenv
 from baconstack.cli import app
+
+# Load environment variables from .env file
+load_dotenv()
 
 
 def wait_for_server(url, timeout=10, interval=0.5):
@@ -127,13 +131,14 @@ def test_dokku_deployment(project_dir):
     os.chdir(project_dir)
 
     try:
+        # Check if just command is available
+        try:
+            subprocess.run(["which", "just"], check=True, capture_output=True)
+        except subprocess.CalledProcessError:
+            pytest.skip("just command not found - please install just to run this test")
 
         # Set up remote and deploy
-        env = {
-            "DOKKU_HOST": os.getenv("DOKKU_HOST"),
-            "DOKKU_HOST_USER": os.getenv("DOKKU_HOST_USER", "dokku"),
-            "DO_API_KEY": os.getenv("DO_API_KEY"),
-        }
+        env = dict(os.environ)  # Use all environment variables from .env
         breakpoint()
         subprocess.run(["just", "setup-remote"], check=True, env=env)
         subprocess.run(["just", "deploy"], check=True, env=env)
