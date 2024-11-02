@@ -11,9 +11,11 @@ def wait_for_server(url, timeout=10, interval=0.5):
     start_time = time.time()
     while True:
         try:
-            urlopen(url)
+            # Use requests with SSL verification disabled for testing
+            response = requests.get(url, verify=False)
+            response.raise_for_status()
             return True
-        except URLError:
+        except (requests.RequestException, ConnectionError):
             if time.time() - start_time > timeout:
                 raise TimeoutError(f"Server did not respond within {timeout} seconds")
             time.sleep(interval)
@@ -144,7 +146,7 @@ def test_dokku_deployment(project_dir):
         # Wait for deployment to complete and server to respond
         url = f"https://{test_app_name}.{os.getenv('DOKKU_HOST')}"
         wait_for_server(url, timeout=30)  # Allow longer timeout for initial deployment
-        response = requests.get(url)
+        response = requests.get(url, verify=False)
         print(response)
         assert response.status_code == 200
 
