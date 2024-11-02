@@ -15,19 +15,24 @@ from rich.table import Table
 app = typer.Typer()
 console = Console()
 
+app = typer.Typer()
+
 def version_callback(value: bool):
     if value:
         typer.echo("baconstack v0.1.0")
         raise typer.Exit()
 
-app = typer.Typer(callback=version_callback)
-app.add_typer(
-    typer.Typer(),
-    callback=version_callback,
-    options=["--version"],
-    is_eager=True,
-    help="Show version and exit",
-)
+@app.callback()
+def common(
+    version: bool = typer.Option(
+        None,
+        "--version",
+        callback=version_callback,
+        is_eager=True,
+        help="Show version and exit",
+    ),
+):
+    pass
 
 
 def read_app_json(project_dir: Path) -> dict:
