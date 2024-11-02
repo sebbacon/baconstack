@@ -33,72 +33,73 @@ def mock_ssh():
 
 def test_basic_setup(mock_ssh):
     """Test basic app setup with minimal parameters"""
-    result = runner.invoke(
-        app,
-        [
-            "setup",
-            "testapp",
-            "test.example.com",
-            "--dokku-host", "dokku.example.com",
-        ],
-    )
-    assert result.exit_code == 0
-    
-    # Verify SSH connection was attempted
-    mock_ssh.return_value.connect.assert_called_once_with(
-        "dokku.example.com",
-        username="seb",
-    )
-    
-    # Check that basic Dokku commands were executed
-    exec_command_calls = mock_ssh.return_value.exec_command.call_args_list
-    expected_commands = [
-        "sudo dokku apps:create testapp",
-        "sudo dokku domains:add testapp test.example.com",
-        "sudo dokku storage:ensure-directory testapp",
-    ]
-    
-    for cmd in expected_commands:
-        assert any(
-            cmd in call.args[0] for call in exec_command_calls
-        ), f"Expected command not found: {cmd}"
+    with patch('digitalocean.Manager'):
+        result = runner.invoke(
+            app,
+            [
+                "setup",
+                "testapp",
+                "test.example.com",
+                "--dokku-host", "dokku.example.com",
+                "--do-token", "fake-token"
+            ],
+        )
+        assert result.exit_code == 0
+        
+        # Verify SSH connection was attempted
+        mock_ssh.return_value.connect.assert_called_once_with(
+            "dokku.example.com",
+            username="seb",
+        )
+        
+        # Check that basic Dokku commands were executed
+        exec_command_calls = mock_ssh.return_value.exec_command.call_args_list
+        expected_commands = [
+            "sudo dokku apps:create testapp",
+            "sudo dokku domains:add testapp test.example.com",
+            "sudo dokku storage:ensure-directory testapp",
+        ]
+        
+        for cmd in expected_commands:
+            assert any(
+                cmd in str(call) for call in exec_command_calls
+            ), f"Expected command not found: {cmd}"
 
 
 def test_setup_error_handling(mock_ssh):
     """Test handling of SSH errors during setup"""
-    # Configure mock to simulate an error
-    # Configure mock with error response
-    mock_stdin = StringIO()
-    mock_stdout = StringIO()
-    mock_stderr = StringIO()
-    mock_stderr.read = lambda: b"Error: App already exists"
-    mock_stdout.read = lambda: b""
-    
-    # Mock all exec_command calls to return error
-    def mock_exec(*args, **kwargs):
-        return mock_stdin, mock_stdout, mock_stderr
-    mock_ssh.return_value.exec_command = mock_exec
+    with patch('digitalocean.Manager'):
+        # Configure mock with error response
+        mock_stdin = StringIO()
+        mock_stdout = StringIO()
+        mock_stderr = StringIO()
         
-    mock_ssh.return_value.exec_command.return_value = (
-        mock_stdin,
-        mock_stdout,
-        mock_stderr,
-    )
-    
-    result = runner.invoke(
-        app,
-        [
-            "setup",
-            "testapp",
-            "test.example.com",
-            "--dokku-host", "dokku.example.com",
-        ],
-    )
-    
-    # Command should complete but show error message
-    assert result.exit_code == 0
-    assert "Error running" in result.stdout
-    assert "Error: App already exists" in result.stdout
+        def mock_exec(cmd):
+            if "apps:create" in cmd:
+                mock_stderr.read = lambda: b"Error: App already exists"
+                mock_stdout.read = lambda: b""
+            else:
+                mock_stderr.read = lambda: b""
+                mock_stdout.read = lambda: b"Success"
+            return mock_stdin, mock_stdout, mock_stderr
+            
+        mock_ssh.return_value.exec_command = mock_exec
+        
+        result = runner.invoke(
+            app,
+            [
+                "setup",
+                "testapp",
+                "test.example.com",
+                "--dokku-host", "dokku.example.com",
+                "--do-token", "fake-token"
+            ],
+        )
+        
+        # Command should complete but show error message
+        assert result.exit_code == 0
+        assert "Error running sudo dokku apps:create" in result.stdout
+        assert "Error: App already exists" in result.stdout
 
 
 def test_setup_with_apt_packages(mock_ssh):
