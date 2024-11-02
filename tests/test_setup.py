@@ -101,7 +101,15 @@ def test_setup_error_handling(mock_ssh):
                 "dokku.example.com",
                 "--do-token",
                 "fake-token",
+                "--dokku-user",
+                "testuser",
             ],
+        )
+
+        # Verify SSH connection was attempted with correct username
+        mock_ssh.return_value.connect.assert_called_once_with(
+            "dokku.example.com",
+            username="testuser",
         )
 
         # Command should complete but show error message
