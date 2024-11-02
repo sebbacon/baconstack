@@ -23,7 +23,7 @@ def project_dir():
 
 def test_flask_template(project_dir):
     # Generate project using CLI
-    runner = CliRunner()
+    runner = CliRunner(mix_stderr=False)
     result = runner.invoke(
         app,
         [
@@ -32,7 +32,11 @@ def test_flask_template(project_dir):
             "--framework", "flask",
             "--domain", "test.example.com",
         ],
+        env={"COPIER_NOT_A_TTY": "1"}
     )
+    if result.exit_code != 0:
+        print("CLI Output:", result.stdout)
+        print("CLI Errors:", result.stderr)
     assert result.exit_code == 0
 
     # Move generated project to test directory
