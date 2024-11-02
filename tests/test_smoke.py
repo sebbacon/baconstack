@@ -48,12 +48,22 @@ def test_flask_template(project_dir):
     os.chdir(project_dir)
 
     try:
+        # Activate virtual environment and run tests
+        venv_path = os.path.join(project_dir, ".venv")
+        if os.name == "nt":  # Windows
+            activate_script = os.path.join(venv_path, "Scripts", "activate.bat")
+            activate_cmd = f"call {activate_script} && "
+        else:  # Unix-like
+            activate_script = os.path.join(venv_path, "bin", "activate")
+            activate_cmd = f"source {activate_script} && "
+
         # Run tests first
-        subprocess.run(["just", "test"], check=True)
+        subprocess.run(activate_cmd + "just test", shell=True, check=True)
 
         # Start the Flask app in the background
         process = subprocess.Popen(
-            ["just", "dev"],
+            activate_cmd + "just dev",
+            shell=True,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             preexec_fn=os.setsid,  # Create new process group
