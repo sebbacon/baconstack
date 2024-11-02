@@ -17,10 +17,12 @@ console = Console()
 
 app = typer.Typer()
 
+
 def version_callback(value: bool):
     if value:
         typer.echo("baconstack v0.1.0")
         raise typer.Exit()
+
 
 @app.callback()
 def common(

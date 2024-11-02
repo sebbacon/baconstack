@@ -3,9 +3,7 @@ name = "baconstack"
 version = "0.1.0"
 description = "CLI tool for creating and managing Python web applications with Dokku deployment"
 requires-python = ">=3.11"
-authors = [
-    { name = "Seb Bacon", email = "seb@example.com" }
-]
+authors = [{ name = "Seb Bacon", email = "seb@example.com" }]
 dependencies = [
     "typer>=0.9.0",
     "rich>=13.7.0",
@@ -16,11 +14,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-dev = [
-    "pytest>=8.0.0",
-    "ruff>=0.2.0",
-    "pre-commit>=3.6.0",
-]
+dev = ["pytest>=8.0.0", "ruff>=0.2.0", "pre-commit>=3.6.0"]
 
 [project.scripts]
 baconstack = "baconstack.cli:app"
@@ -32,16 +26,18 @@ build-backend = "hatchling.build"
 [tool.ruff]
 line-length = 88
 lint.extend-select = [
-    "A",    # flake8-builtins
-    "I",    # isort
-    "INP",  # flake8-no-pep420
-    "ISC",  # flake8-implicit-str-concat
-    "UP",   # pyupgrade
-    "W",    # pycodestyle warning
+    "A",   # flake8-builtins
+    "I",   # isort
+    "INP", # flake8-no-pep420
+    "ISC", # flake8-implicit-str-concat
+    "UP",  # pyupgrade
+    "W",   # pycodestyle warning
 ]
+lint.ignore = ["ISC001"]
 
 [tool.uv]
 dev-dependencies = [
     "aider-chat>=0.60.1",
+    "bump2version>=1.0.1",
     "pytest>=8.3.3",
 ]
