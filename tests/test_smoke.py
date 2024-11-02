@@ -65,12 +65,11 @@ def test_flask_template(project_dir):
         assert result.exit_code == 0 or "pre-commit" in result.stdout
 
         assert os.path.exists("test_project"), "'test_project/' was not created"
-        project_dir = os.path.join(project_dir, "test_project")
-
-
-    try:
-        # Activate virtual environment and run tests
-        venv_path = os.path.join(project_dir, ".venv")
+        project_path = os.path.join(os.getcwd(), "test_project")
+        # Create and activate virtual environment
+        venv_path = os.path.join(project_path, ".venv")
+        subprocess.run(["python3", "-m", "venv", venv_path], check=True)
+        
         if os.name == "nt":  # Windows
             activate_script = os.path.join(venv_path, "Scripts", "activate.bat")
             activate_cmd = f"call {activate_script} && "
@@ -78,14 +77,15 @@ def test_flask_template(project_dir):
             activate_script = os.path.join(venv_path, "bin", "activate")
             activate_cmd = f"source {activate_script} && "
 
-        # Run tests first
-        subprocess.run(activate_cmd + "just install", shell=True, check=True)
+        # Install dependencies
+        subprocess.run(activate_cmd + "pip install -e '.[dev]'", shell=True, check=True)
 
-        subprocess.run(activate_cmd + "just test", shell=True, check=True)
+        # Run tests
+        subprocess.run(activate_cmd + "pytest", shell=True, check=True)
 
         # Start the Flask app in the background
         process = subprocess.Popen(
-            activate_cmd + "just dev",
+            activate_cmd + "flask run --port 8001",
             shell=True,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
