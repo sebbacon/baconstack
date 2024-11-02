@@ -273,22 +273,45 @@ def sync(
     ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
     ssh.connect(dokku_host, username=dokku_user)
 
-    # Clear existing config
-    stdin, stdout, stderr = ssh.exec_command(f"sudo dokku config:clear {project_name}")
-    if stderr.read():
-        console.print("[red]Error clearing existing configuration[/red]")
+    # Get existing configuration
+    stdin, stdout, stderr = ssh.exec_command(f"sudo dokku config:show {project_name}")
+    existing_config = {}
+    for line in stdout.read().decode().split('\n'):
+        if ':' in line:
+            key, value = line.split(':', 1)
+            existing_config[key.strip()] = value.strip()
+
+    # Compare and update configuration
+    changes = []
+    for key, new_value in env_vars.items():
+        if not new_value:  # Skip empty values
+            continue
+            
+        if key in existing_config:
+            if existing_config[key] != new_value:
+                if typer.confirm(f"Variable {key} exists with different value. Overwrite?"):
+                    changes.append((key, new_value))
+            # If values are the same, skip
+        else:
+            # New variable, add it
+            changes.append((key, new_value))
+
+    if not changes:
+        console.print("[yellow]No changes needed[/yellow]")
         return
 
-    # Set new configuration
+    # Apply changes
     config_cmd = f"sudo dokku config:set {project_name}"
-    for key, value in env_vars.items():
-        if value:  # Only set non-empty values
-            config_cmd += f' {key}="{value}"'
+    for key, value in changes:
+        config_cmd += f' {key}="{value}"'
 
     stdin, stdout, stderr = ssh.exec_command(config_cmd)
-    if stderr.read():
-        console.print("[red]Error setting configuration[/red]")
+    error = stderr.read().decode()
+    if error:
+        console.print(f"[red]Error setting configuration:[/red] {error}")
         return
+    
+    console.print(f"[green]Updated {len(changes)} variables[/green]")
 
     # Show current configuration
     stdin, stdout, stderr = ssh.exec_command(f"sudo dokku config:show {project_name}")
