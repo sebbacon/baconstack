@@ -40,33 +40,33 @@ def project_dir():
 
 
 def test_flask_template(project_dir):
-    # Generate project using CLI
-    runner = CliRunner(mix_stderr=False)
-    result = runner.invoke(
-        app,
-        [
-            "new",
-            "test_project",
-            "--framework",
-            "flask",
-            "--domain",
-            "test.example.com",
-        ],
-        env={"COPIER_NOT_A_TTY": "1", "SKIP_PRE_COMMIT": "1"},
-    )
-    if result.exit_code != 0:
-        print("CLI Output:", result.stdout)
-        print("CLI Errors:", result.stderr)
-    assert result.exit_code == 0 or "pre-commit" in result.stdout
-
-    # Move generated project to test directory
-    assert os.path.exists("test_project"), "'test_project/' was not created"
-    shutil.move("test_project", project_dir + "/test_project")
-    project_dir = os.path.join(project_dir, "test_project")
-
-    # Change to project directory
+    # Save current directory
     original_dir = os.getcwd()
     os.chdir(project_dir)
+
+    try:
+        # Generate project using CLI in temp dir
+        runner = CliRunner(mix_stderr=False)
+        result = runner.invoke(
+            app,
+            [
+                "new",
+                "test_project",
+                "--framework",
+                "flask",
+                "--domain",
+                "test.example.com",
+            ],
+            env={"COPIER_NOT_A_TTY": "1", "SKIP_PRE_COMMIT": "1"},
+        )
+        if result.exit_code != 0:
+            print("CLI Output:", result.stdout)
+            print("CLI Errors:", result.stderr)
+        assert result.exit_code == 0 or "pre-commit" in result.stdout
+
+        assert os.path.exists("test_project"), "'test_project/' was not created"
+        project_dir = os.path.join(project_dir, "test_project")
+
 
     try:
         # Activate virtual environment and run tests
