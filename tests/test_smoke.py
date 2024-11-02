@@ -132,8 +132,13 @@ def test_dokku_deployment(project_dir):
     try:
 
         # Set up remote and deploy
-        subprocess.run(["just", "setup-remote"], check=True)
-        subprocess.run(["just", "deploy"], check=True)
+        env = {
+            "DOKKU_HOST": os.getenv("DOKKU_HOST"),
+            "DOKKU_HOST_USER": os.getenv("DOKKU_HOST_USER", "dokku"),
+            "DO_API_KEY": os.getenv("DO_API_KEY"),
+        }
+        subprocess.run(["just", "setup-remote"], check=True, env=env)
+        subprocess.run(["just", "deploy"], check=True, env=env)
         # Wait for deployment to complete and server to respond
         url = f"https://{test_app_name}.{os.getenv('DOKKU_HOST')}"
         wait_for_server(url, timeout=30)  # Allow longer timeout for initial deployment
