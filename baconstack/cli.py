@@ -369,6 +369,55 @@ def env(ctx: typer.Context):
 
 
 @app.command()
+def destroy(
+    project_name: str,
+    dokku_host: str = typer.Option(..., envvar="DOKKU_HOST"),
+    do_token: str = typer.Option(..., envvar="DO_API_KEY"),
+    force: bool = typer.Option(False, "--force", help="Skip confirmation prompt"),
+):
+    """Destroy a Dokku app and remove its DNS record"""
+    if not force:
+        confirm = typer.confirm(
+            f"This will permanently delete the app '{project_name}' and its DNS records. Continue?"
+        )
+        if not confirm:
+            raise typer.Abort()
+
+    # Connect to Dokku host
+    ssh = paramiko.SSHClient()
+    ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+    ssh.connect(dokku_host)
+
+    # Destroy the Dokku app
+    stdin, stdout, stderr = ssh.exec_command(f"sudo dokku apps:destroy {project_name} --force")
+    stdout_data = stdout.read().decode()
+    stderr_data = stderr.read().decode()
+
+    if stdout_data:
+        console.print(stdout_data)
+    if stderr_data:
+        console.print(f"[red]Error destroying app:[/red] {stderr_data}")
+        return
+
+    # Remove DNS record from DigitalOcean
+    try:
+        manager = digitalocean.Manager(token=do_token)
+        domains = manager.get_all_domains()
+        
+        for domain in domains:
+            records = domain.get_records()
+            for record in records:
+                if record.type == "CNAME" and record.name == project_name:
+                    record.destroy()
+                    console.print(f"[green]Removed DNS record for {project_name}.{domain.name}[/green]")
+                    return
+
+        console.print("[yellow]No matching DNS records found[/yellow]")
+
+    except Exception as e:
+        console.print(f"[red]Error removing DNS record: {str(e)}[/red]")
+
+@app.command()
 def setup_loki(
     project_name: str,
     dokku_host: str = typer.Option(..., envvar="DOKKU_HOST"),

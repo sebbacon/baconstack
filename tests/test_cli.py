@@ -45,3 +45,43 @@ def test_setup_command(mock_ssh, mock_do_manager):
         ],
     )
     assert result.exit_code == 0
+
+@patch("digitalocean.Manager")
+@patch("paramiko.SSHClient")
+def test_destroy_command(mock_ssh, mock_do_manager):
+    # Set up mock SSH client
+    mock_ssh_instance = mock_ssh.return_value
+    mock_stdout = MagicMock()
+    mock_stdout.read.return_value = b"App destroyed"
+    mock_stderr = MagicMock()
+    mock_stderr.read.return_value = b""
+    mock_ssh_instance.exec_command.return_value = (None, mock_stdout, mock_stderr)
+
+    # Set up mock DO manager
+    mock_manager = mock_do_manager.return_value
+    mock_domain = MagicMock()
+    mock_record = MagicMock()
+    mock_record.type = "CNAME"
+    mock_record.name = "testapp"
+    mock_domain.get_records.return_value = [mock_record]
+    mock_manager.get_all_domains.return_value = [mock_domain]
+
+    result = runner.invoke(
+        app,
+        [
+            "destroy",
+            "testapp",
+            "--dokku-host", "dokku.example.com",
+            "--do-token", "fake-token",
+            "--force",
+        ],
+    )
+    assert result.exit_code == 0
+    
+    # Verify SSH command was executed
+    mock_ssh_instance.exec_command.assert_called_with(
+        "sudo dokku apps:destroy testapp --force"
+    )
+    
+    # Verify DNS record was destroyed
+    mock_record.destroy.assert_called_once()
