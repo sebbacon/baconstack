@@ -104,8 +104,8 @@ def test_flask_template(project_dir):
 
 
 @pytest.mark.skipif(
-    not os.getenv("DOKKU_HOST") or not os.getenv("TEST_DOMAIN"),
-    reason="DOKKU_HOST and TEST_DOMAIN and DO_API_KEY environment variables required for deployment test",
+    not os.getenv("DOKKU_HOST"),
+    reason="DOKKU_HOST and DO_API_KEY environment variables required for deployment test",
 )
 def test_dokku_deployment(project_dir):
     test_app_name = f"testapp{int(time.time())}"  # Unique name for each test run
@@ -120,7 +120,7 @@ def test_dokku_deployment(project_dir):
             "--framework",
             "flask",
             "--domain",
-            f"{test_app_name}.{os.getenv('TEST_DOMAIN')}",
+            f"{test_app_name}.{os.getenv('DOKKU_HOST')}",
         ],
     )
     assert result.exit_code == 0
@@ -139,7 +139,7 @@ def test_dokku_deployment(project_dir):
         subprocess.run(["just", "setup-remote"], check=True)
         subprocess.run(["just", "deploy"], check=True)
         # Wait for deployment to complete and server to respond
-        url = f"https://{test_app_name}.{os.getenv('TEST_DOMAIN')}"
+        url = f"https://{test_app_name}.{os.getenv('DOKKU_HOST')}"
         wait_for_server(url, timeout=30)  # Allow longer timeout for initial deployment
         response = requests.get(url)
         print(response)
