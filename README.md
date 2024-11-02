@@ -15,26 +15,22 @@ pip install pre-commit
 pre-commit install
 ```
 
-## Required Environment Variables
-
-- `DOKKU_HOST`: Your Dokku server hostname
-- `DO_API_KEY`: DigitalOcean API token (for DNS management)
-
-Optional:
-
-- `HEALTHCHECK_URL`: URL for uptime monitoring
-- `BACONSTACK_TEMPLATE`: Custom template repository (defaults to gh:sebbacon/baconstack-template)
-
 ## Quick Start
 
 You'll need to [set up a running dokku server](https://dokku.com/docs/getting-started/installation/). You should set up your ssh so you have passwordless login, and root-equivalent access to the `dokku` command for that account, for example with this `sudoer` config:
 
     seb ALL=(ALL) NOPASSWD:SETENV: /usr/bin/dokku
 
+Create a new `.env` file, and edit its values.
+
+```bash
+baconstack env init
+```
+
 Then, on your development machine:
 
 ```bash
-baconstack new myproject --framework flask --domain myproject.your.dokku.host
+baconstack new myproject --domain myproject.your.dokku.host
 cd myproject
 just install
 
@@ -42,30 +38,17 @@ just install
 just setup-remote
 ```
 
-## Usage
-
-### Environment Variables
+Add your environment variables to the dokku app:
 
 ```bash
-# Initialize from template at .env.example
-baconstack env init
-
-# Show current Dokku environment variables
-baconstack env show PROJECT_NAME
-
-# Sync local .env to Dokku
-baconstack env sync PROJECT_NAME
+baconstack env sync myproject
 ```
+
+## Usage
 
 ### Project Management
 
 ```bash
-# Create project with options
-baconstack new PROJECT_NAME \
-  --framework [fastapi|flask|django] \
-  --domain example.com \
-  --healthcheck-url URL
-
 # Set up Loki logging
 baconstack setup-loki PROJECT_NAME
 

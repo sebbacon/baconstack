@@ -131,15 +131,10 @@ def test_dokku_deployment(project_dir):
     os.chdir(project_dir)
 
     try:
-        # Check if just command is available
-        try:
-            subprocess.run(["which", "just"], check=True, capture_output=True)
-        except subprocess.CalledProcessError:
-            pytest.skip("just command not found - please install just to run this test")
 
         # Set up remote and deploy
         env = dict(os.environ)  # Use all environment variables from .env
-        breakpoint()
+        subprocess.run(["just", "install"], check=True, env=env)
         subprocess.run(["just", "setup-remote"], check=True, env=env)
         subprocess.run(["just", "deploy"], check=True, env=env)
         # Wait for deployment to complete and server to respond

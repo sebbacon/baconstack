@@ -276,9 +276,9 @@ def sync(
     # Get existing configuration
     stdin, stdout, stderr = ssh.exec_command(f"sudo dokku config:show {project_name}")
     existing_config = {}
-    for line in stdout.read().decode().split('\n'):
-        if ':' in line:
-            key, value = line.split(':', 1)
+    for line in stdout.read().decode().split("\n"):
+        if ":" in line:
+            key, value = line.split(":", 1)
             existing_config[key.strip()] = value.strip()
 
     # Compare and update configuration
@@ -286,10 +286,12 @@ def sync(
     for key, new_value in env_vars.items():
         if not new_value:  # Skip empty values
             continue
-            
+
         if key in existing_config:
             if existing_config[key] != new_value:
-                if typer.confirm(f"Variable {key} exists with different value. Overwrite?"):
+                if typer.confirm(
+                    f"Variable {key} exists with different value. Overwrite?"
+                ):
                     changes.append((key, new_value))
             # If values are the same, skip
         else:
@@ -306,12 +308,16 @@ def sync(
         config_cmd += f' {key}="{value}"'
 
     stdin, stdout, stderr = ssh.exec_command(config_cmd)
+    # Ensure both stdout and stderr are read
+    output = stdout.read().decode()
     error = stderr.read().decode()
+
+    if output:
+        console.print(f"[green]Output:[/green] {output}")
+
     if error:
         console.print(f"[red]Error setting configuration:[/red] {error}")
         return
-    
-    console.print(f"[green]Updated {len(changes)} variables[/green]")
 
     # Show current configuration
     stdin, stdout, stderr = ssh.exec_command(f"sudo dokku config:show {project_name}")
