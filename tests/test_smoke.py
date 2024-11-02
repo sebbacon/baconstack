@@ -76,22 +76,22 @@ def test_flask_template(project_dir):
 def test_dokku_deployment(project_dir):
     test_app_name = f"testapp{int(time.time())}"  # Unique name for each test run
 
-    # Generate project from template
-    run_copy(
-        get_template_repo(),
-        project_dir,
-        data={
-            "project_name": test_app_name,
-            "framework": "flask",
-            "project_description": "Test Flask App",
-            "domain": f"{test_app_name}.{os.getenv('TEST_DOMAIN')}",
-            "author_name": "Test Author",
-            "author_email": "test@example.com",
-            "use_loki": False,
-        },
-        unsafe=True,
-        vcs_ref="HEAD",
+    # Generate project using CLI
+    runner = CliRunner()
+    result = runner.invoke(
+        app,
+        [
+            "new",
+            test_app_name,
+            "--framework", "flask",
+            "--domain", f"{test_app_name}.{os.getenv('TEST_DOMAIN')}",
+        ],
     )
+    assert result.exit_code == 0
+
+    # Move generated project to test directory
+    shutil.move(test_app_name, project_dir + f"/{test_app_name}")
+    project_dir = os.path.join(project_dir, test_app_name)
 
     # Change to project directory
     original_dir = os.getcwd()
