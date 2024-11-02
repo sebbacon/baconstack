@@ -87,20 +87,6 @@ def test_flask_template(project_dir):
             preexec_fn=os.setsid,  # Create new process group
         )
 
-        def wait_for_server(url, timeout=10, interval=0.5):
-            """Wait for server to start responding, with timeout"""
-            start_time = time.time()
-            while True:
-                try:
-                    urlopen(url)
-                    return True
-                except URLError:
-                    if time.time() - start_time > timeout:
-                        raise TimeoutError(
-                            f"Server did not respond within {timeout} seconds"
-                        )
-                    time.sleep(interval)
-
         try:
             # Wait for server to start
             wait_for_server("http://localhost:8001", timeout=10)
