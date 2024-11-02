@@ -120,11 +120,11 @@ def test_setup_with_apt_packages(mock_ssh):
         mock_domain.create_new_domain_record.return_value = None
 
         with patch("baconstack.cli.read_app_json") as mock_read_json:
-        mock_read_json.return_value = {
-            "dokku": {
-                "apt-packages": ["postgresql-client", "redis-tools"]
+            mock_read_json.return_value = {
+                "dokku": {
+                    "apt-packages": ["postgresql-client", "redis-tools"]
+                }
             }
-        }
         
         result = runner.invoke(
             app,
