@@ -46,6 +46,8 @@ def test_basic_setup(mock_ssh):
                 "testuser",
                 "--do-token",
                 "fake-token",
+                "--dokku-user",
+                "testuser",
             ],
         )
         assert result.exit_code == 0
