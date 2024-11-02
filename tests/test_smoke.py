@@ -10,6 +10,12 @@ import signal
 from pathlib import Path
 
 
+def get_template_repo():
+    return os.getenv(
+        "BACONSTACK_TEMPLATE", "https://github.com/sebbacon/baconstack-template"
+    )
+
+
 @pytest.fixture
 def project_dir():
     # Create a temporary directory for the test project
@@ -22,7 +28,7 @@ def project_dir():
 def test_flask_template(project_dir):
     # Generate project from template
     run_copy(
-        ".",
+        get_template_repo(),
         project_dir,
         data={
             "project_name": "test_project",
@@ -76,7 +82,7 @@ def test_dokku_deployment(project_dir):
 
     # Generate project from template
     run_copy(
-        ".",
+        get_template_repo(),
         project_dir,
         data={
             "project_name": test_app_name,
