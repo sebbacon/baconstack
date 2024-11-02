@@ -139,11 +139,10 @@ def test_dokku_deployment(project_dir):
         # Set up remote and deploy
         subprocess.run(["just", "setup-remote"], check=True)
         subprocess.run(["just", "deploy"], check=True)
-        # Wait for deployment to complete
-        time.sleep(8)  # Give it some time to deploy
-        # Test if the app is responding
+        # Wait for deployment to complete and server to respond
         url = f"https://{test_app_name}.{os.getenv('TEST_DOMAIN')}"
-        response = requests.get(url, timeout=30)
+        wait_for_server(url, timeout=30)  # Allow longer timeout for initial deployment
+        response = requests.get(url)
         print(response)
         assert response.status_code == 200
 
