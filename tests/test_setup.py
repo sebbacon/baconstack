@@ -17,42 +17,45 @@ def mock_ssh():
         mock_stdin = StringIO()
         mock_stdout = StringIO()
         mock_stderr = StringIO()
-        
+
         # Configure the mock's read() methods to return bytes
         mock_stdout.read = lambda: b"Success"
         mock_stderr.read = lambda: b""
-        
+
         # Set up the mock to return our configured streams
         mock.return_value.exec_command.return_value = (
             mock_stdin,
-            mock_stdout, 
-            mock_stderr
+            mock_stdout,
+            mock_stderr,
         )
         yield mock
 
 
 def test_basic_setup(mock_ssh):
     """Test basic app setup with minimal parameters"""
-    with patch('digitalocean.Manager'):
+    with patch("digitalocean.Manager"):
         result = runner.invoke(
             app,
             [
                 "setup",
                 "testapp",
                 "test.example.com",
-                "--dokku-host", "dokku.example.com",
-                "--do-token", "fake-token",
-                "--do-token", "fake-token"
+                "--dokku-host",
+                "dokku.example.com",
+                "--do-token",
+                "fake-token",
+                "--do-token",
+                "fake-token",
             ],
         )
         assert result.exit_code == 0
-        
+
         # Verify SSH connection was attempted
         mock_ssh.return_value.connect.assert_called_once_with(
             "dokku.example.com",
             username="seb",
         )
-        
+
         # Check that basic Dokku commands were executed
         exec_command_calls = mock_ssh.return_value.exec_command.call_args_list
         expected_commands = [
@@ -60,7 +63,7 @@ def test_basic_setup(mock_ssh):
             "sudo dokku domains:add testapp test.example.com",
             "sudo dokku storage:ensure-directory testapp",
         ]
-        
+
         for cmd in expected_commands:
             assert any(
                 cmd in str(call) for call in exec_command_calls
@@ -69,12 +72,12 @@ def test_basic_setup(mock_ssh):
 
 def test_setup_error_handling(mock_ssh):
     """Test handling of SSH errors during setup"""
-    with patch('digitalocean.Manager'):
+    with patch("digitalocean.Manager"):
         # Configure mock with error response
         mock_stdin = StringIO()
         mock_stdout = StringIO()
         mock_stderr = StringIO()
-        
+
         def mock_exec(cmd):
             if "apps:create" in cmd:
                 mock_stderr.read = lambda: b"Error: App already exists"
@@ -83,20 +86,22 @@ def test_setup_error_handling(mock_ssh):
                 mock_stderr.read = lambda: b""
                 mock_stdout.read = lambda: b"Success"
             return mock_stdin, mock_stdout, mock_stderr
-            
+
         mock_ssh.return_value.exec_command = mock_exec
-        
+
         result = runner.invoke(
             app,
             [
                 "setup",
                 "testapp",
                 "test.example.com",
-                "--dokku-host", "dokku.example.com",
-                "--do-token", "fake-token"
+                "--dokku-host",
+                "dokku.example.com",
+                "--do-token",
+                "fake-token",
             ],
         )
-        
+
         # Command should complete but show error message
         assert result.exit_code == 0
         assert "Error running dokku apps:create testapp" in result.stdout
@@ -121,26 +126,25 @@ def test_setup_with_apt_packages(mock_ssh):
 
         with patch("baconstack.cli.read_app_json") as mock_read_json:
             mock_read_json.return_value = {
-                "dokku": {
-                    "apt-packages": ["postgresql-client", "redis-tools"]
-                }
+                "dokku": {"apt-packages": ["postgresql-client", "redis-tools"]}
             }
-        
+
         result = runner.invoke(
             app,
             [
                 "setup",
                 "testapp",
                 "test.example.com",
-                "--dokku-host", "dokku.example.com",
+                "--dokku-host",
+                "dokku.example.com",
             ],
         )
-        
+        breakpoint()
         assert result.exit_code == 0
-        
+
         # Verify APT packages were configured
         exec_command_calls = mock_ssh.return_value.exec_command.call_args_list
-        expected_cmd = 'dokku docker-options:add testapp build --build-arg DOKKU_APT_PACKAGES=postgresql-client redis-tools'
+        expected_cmd = "dokku docker-options:add testapp build --build-arg DOKKU_APT_PACKAGES=postgresql-client redis-tools"
         assert any(
             expected_cmd in call.args[0] for call in exec_command_calls
         ), "APT packages not configured correctly"
