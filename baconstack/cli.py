@@ -73,11 +73,11 @@ def setup_apt_packages(ssh: paramiko.SSHClient, project_name: str, packages: lis
     # Configure Dokku to install packages
     packages_str = " ".join(packages)
     cmd = f"sudo dokku docker-options:add {project_name} build '--build-arg DOKKU_APT_PACKAGES={packages_str}'"
-    
+
     stdin, stdout, stderr = ssh.exec_command(cmd)
     stdout_data = stdout.read().decode()
     stderr_data = stderr.read().decode()
-    
+
     if stdout_data:
         console.print(stdout_data)
     if stderr_data:
@@ -147,7 +147,9 @@ def setup(
     dokku_user: str = typer.Option(
         "seb", help="Username for Dokku host SSH connection"
     ),
-    do_token: str = typer.Option(..., envvar="DO_API_KEY", help="DigitalOcean API token"),
+    do_token: str = typer.Option(
+        ..., envvar="DO_API_KEY", help="DigitalOcean API token"
+    ),
     healthcheck_url: str = typer.Option(None, envvar="HEALTHCHECK_URL"),
 ):
     """Set up Dokku app and configure domain"""
@@ -176,7 +178,9 @@ def setup(
     try:
         do_domain = manager.get_domain(domain_name)
     except Exception as e:
-        console.print(f"[red]Error: Domain {domain_name} not found in DigitalOcean[/red]")
+        console.print(
+            f"[red]Error: Domain {domain_name} not found in DigitalOcean[/red]"
+        )
         console.print(f"[red]Details: {str(e)}[/red]")
         raise typer.Exit(1)
 
@@ -210,7 +214,7 @@ def setup(
         stdin, stdout, stderr = ssh.exec_command(f"sudo {cmd}")
         stdout_data = stdout.read().decode()
         stderr_data = stderr.read().decode()
-        
+
         if stdout_data:
             console.print(stdout_data)
         if stderr_data:
