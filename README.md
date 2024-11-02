@@ -1,83 +1,108 @@
 # baconstack
 
-A CLI tool for creating and managing Python web applications with integrated Dokku deployment.
-
-## Features
-
-- 🎯 Project creation from customizable templates
-- 🚀 Automated Dokku setup and deployment
-- 📦 Modern dependency management with uv
-- 🔄 Zero-downtime deployments with health checks
-- 🔍 Built-in logging with Loki support
-- 🔐 Environment variable management
-- 🌐 DNS management with DigitalOcean
-- ⚙️ APT package management for Dokku apps
+CLI tool for creating and managing Python web applications with Dokku deployment.
 
 ## Installation
 
 ```bash
-# Using uv (recommended)
-uv pip install baconstack
-
-# Or using pip
 pip install baconstack
 ```
+
+Optional: Install pre-commit hooks for development:
+```bash
+pip install pre-commit
+pre-commit install
+```
+
+## Required Environment Variables
+
+- `DOKKU_HOST`: Your Dokku server hostname
+- `DO_API_KEY`: DigitalOcean API token (for DNS management)
+
+Optional:
+- `HEALTHCHECK_URL`: URL for uptime monitoring
+- `BACONSTACK_TEMPLATE`: Custom template repository (defaults to gh:sebbacon/baconstack-template)
 
 ## Quick Start
 
 ```bash
-# Set up environment variables
 export DOKKU_HOST=your.dokku.host
-export DO_API_KEY=your_digitalocean_token  # Optional, for DNS management
+export DO_API_KEY=your_digitalocean_token
 
-# Create a new project
-baconstack new myproject --framework fastapi
-
-# Initialize environment variables
+baconstack new myproject
 cd myproject
-baconstack env init
-
-# Edit your .env file
-editor .env
-
-# Set up Dokku app
 baconstack setup myproject myproject.example.com
-
-# Sync environment variables to Dokku
-baconstack env sync myproject
-
-# Optional: Set up Loki logging
-baconstack setup-loki myproject
 ```
 
-## Commands
-
-### Project Creation
-
-```bash
-# Create a new project
-baconstack new PROJECT_NAME [OPTIONS]
-
-Options:
-  --framework [fastapi|flask|django]  Web framework to use (default: fastapi)
-  --domain TEXT                      Domain for deployment
-  --healthcheck-url TEXT            Healthcheck.io URL for uptime monitoring
-```
-
-### Dokku Setup
-
-```bash
-# Set up a new Dokku app
-baconstack setup PROJECT_NAME DOMAIN [OPTIONS]
-
-Options:
-  --dokku-host TEXT      Dokku host (or set DOKKU_HOST env var)
-  --do-token TEXT        DigitalOcean API token (or set DO_API_KEY env var)
-  --healthcheck-url TEXT Healthcheck.io URL
-```
+## Usage
 
 ### Environment Variables
 
 ```bash
+# Initialize from template
+baconstack env init
 
+# Show current Dokku environment variables
+baconstack env show PROJECT_NAME
+
+# Sync local .env to Dokku
+baconstack env sync PROJECT_NAME
 ```
+
+### Project Management
+
+```bash
+# Create project with options
+baconstack new PROJECT_NAME \
+  --framework [fastapi|flask|django] \
+  --domain example.com \
+  --healthcheck-url URL
+
+# Set up Loki logging
+baconstack setup-loki PROJECT_NAME
+
+# Remove project and DNS records
+baconstack destroy PROJECT_NAME [--force]
+```
+
+### Development
+
+```bash
+# Install development dependencies
+just install
+
+# Run tests
+just test
+
+# Run linting
+just lint
+
+# Format code
+just format
+
+# Show current version
+just version
+
+# Bump version (major/minor/patch)
+just bump minor
+```
+
+## Template Customization
+
+Projects are created from templates with these configurable options:
+- Framework selection (fastapi/flask/django)
+- Domain configuration
+- Healthcheck URL
+- Project description
+- Author information
+- Loki logging setup
+
+## Features
+
+- Zero-downtime deployments with health checks
+- SSL/Let's Encrypt automatic setup
+- APT package management via app.json
+- Persistent storage mounting
+- Environment variable management
+- DNS management with DigitalOcean
+- Loki logging integration
