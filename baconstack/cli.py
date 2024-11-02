@@ -255,6 +255,7 @@ def init(
 def sync(
     project_name: str,
     dokku_host: str = typer.Option(..., envvar="DOKKU_HOST"),
+    dokku_user: str = typer.Option(..., envvar="DOKKU_HOST_USER"),
     env_file: str = typer.Option(".env", help="Path to .env file"),
 ):
     """Sync local environment variables to Dokku"""
@@ -317,11 +318,12 @@ def sync(
 def show(
     project_name: str,
     dokku_host: str = typer.Option(..., envvar="DOKKU_HOST"),
+    dokku_user: str = typer.Option(..., envvar="DOKKU_HOST_USER"),
 ):
     """Show current Dokku environment variables"""
     ssh = paramiko.SSHClient()
     ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-    ssh.connect(dokku_host)
+    ssh.connect(dokku_host, username=dokku_user)
 
     stdin, stdout, stderr = ssh.exec_command(f"sudo dokku config:show {project_name}")
     config_output = stdout.read().decode()
