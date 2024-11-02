@@ -143,6 +143,11 @@ def new(
             unsafe=True,
             vcs_ref="HEAD",
         )
+        
+        # Skip pre-commit if requested
+        if os.getenv("SKIP_PRE_COMMIT"):
+            return
+            
     except subprocess.CalledProcessError as e:
         console.print(f"[red]Error creating project: {e}[/red]")
         raise typer.Exit(1)
