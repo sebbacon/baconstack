@@ -136,7 +136,7 @@ def setup(
     domain: str,
     dokku_host: str = typer.Option(..., envvar="DOKKU_HOST"),
     dokku_user: str = typer.Option(
-        "seb", help="Username for Dokku host SSH connection"
+        ..., envvar="DOKKU_HOST_USER", help="Username for Dokku host SSH connection"
     ),
     do_token: str = typer.Option(
         ..., envvar="DO_API_KEY", help="DigitalOcean API token"
@@ -269,7 +269,7 @@ def sync(
     # Connect to Dokku host
     ssh = paramiko.SSHClient()
     ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-    ssh.connect(dokku_host)
+    ssh.connect(dokku_host, username=dokku_user)
 
     # Clear existing config
     stdin, stdout, stderr = ssh.exec_command(f"sudo dokku config:clear {project_name}")
