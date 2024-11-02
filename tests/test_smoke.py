@@ -4,6 +4,19 @@ import time
 import requests
 from urllib.error import URLError
 from urllib.request import urlopen
+
+
+def wait_for_server(url, timeout=10, interval=0.5):
+    """Wait for server to start responding, with timeout"""
+    start_time = time.time()
+    while True:
+        try:
+            urlopen(url)
+            return True
+        except URLError:
+            if time.time() - start_time > timeout:
+                raise TimeoutError(f"Server did not respond within {timeout} seconds")
+            time.sleep(interval)
 import pytest
 import tempfile
 import shutil
