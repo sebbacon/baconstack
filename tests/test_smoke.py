@@ -75,7 +75,7 @@ def test_flask_template(project_dir):
 
 @pytest.mark.skipif(
     not os.getenv("DOKKU_HOST") or not os.getenv("TEST_DOMAIN"),
-    reason="DOKKU_HOST and TEST_DOMAIN environment variables required for deployment test",
+    reason="DOKKU_HOST and TEST_DOMAIN and DO_API_KEY environment variables required for deployment test",
 )
 def test_dokku_deployment(project_dir):
     test_app_name = f"testapp{int(time.time())}"  # Unique name for each test run
