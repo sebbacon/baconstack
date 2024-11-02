@@ -115,6 +115,8 @@ def test_dokku_deployment(project_dir):
             "flask",
             "--domain",
             f"{test_app_name}.{os.getenv('DOKKU_HOST')}",
+            "--dokku-user",
+            os.getenv("DOKKU_HOST_USER", "dokku"),
         ],
     )
     assert result.exit_code == 0
