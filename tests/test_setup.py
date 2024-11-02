@@ -53,7 +53,7 @@ def test_basic_setup(mock_ssh):
         # Verify SSH connection was attempted
         mock_ssh.return_value.connect.assert_called_once_with(
             "dokku.example.com",
-            username="seb",
+            username="testuser",
         )
 
         # Check that basic Dokku commands were executed
