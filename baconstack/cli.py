@@ -70,29 +70,18 @@ def setup_apt_packages(ssh: paramiko.SSHClient, project_name: str, packages: lis
     if not packages:
         return
 
-    # Create apt-packages file
-    packages_str = "\n".join(packages)
-    stdin, stdout, stderr = ssh.exec_command(
-        f"""
-        cat << EOF > /home/dokku/{project_name}/apt-packages
-{packages_str}
-EOF
-    """
-    )
-    if stderr.read():
-        console.print("[red]Error creating apt-packages file[/red]")
-        return
-
     # Configure Dokku to install packages
-    commands = [
-        f"dokku docker-options:add {project_name} build '--build-arg DOKKU_APT_PACKAGES=\"{' '.join(packages)}\"'",
-    ]
-
-    for cmd in commands:
-        stdin, stdout, stderr = ssh.exec_command(f"sudo {cmd}")
-        console.print(stdout.read().decode())
-        if stderr.read():
-            console.print(f"[red]Error running {cmd}[/red]")
+    packages_str = " ".join(packages)
+    cmd = f"sudo dokku docker-options:add {project_name} build '--build-arg DOKKU_APT_PACKAGES={packages_str}'"
+    
+    stdin, stdout, stderr = ssh.exec_command(cmd)
+    stdout_data = stdout.read().decode()
+    stderr_data = stderr.read().decode()
+    
+    if stdout_data:
+        console.print(stdout_data)
+    if stderr_data:
+        console.print(f"[red]Error configuring APT packages[/red]: {stderr_data}")
 
 
 def setup_healthcheck(

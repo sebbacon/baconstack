@@ -140,7 +140,7 @@ def test_setup_with_apt_packages(mock_ssh):
         
         # Verify APT packages were configured
         exec_command_calls = mock_ssh.return_value.exec_command.call_args_list
-        expected_cmd = 'dokku docker-options:add testapp build \'--build-arg DOKKU_APT_PACKAGES="postgresql-client redis-tools"\''
+        expected_cmd = 'dokku docker-options:add testapp build --build-arg DOKKU_APT_PACKAGES=postgresql-client redis-tools'
         assert any(
             expected_cmd in call.args[0] for call in exec_command_calls
         ), "APT packages not configured correctly"
