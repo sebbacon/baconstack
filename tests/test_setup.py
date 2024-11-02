@@ -152,9 +152,17 @@ def test_setup_with_apt_packages(mock_ssh):
                 "dokku.example.com",
                 "--do-token",
                 "fake-token",
+                "--dokku-user",
+                "testuser",
             ],
         )
         assert result.exit_code == 0
+
+        # Verify SSH connection was attempted with correct username
+        mock_ssh.return_value.connect.assert_called_once_with(
+            "dokku.example.com",
+            username="testuser",
+        )
 
         # Verify APT packages were configured
         exec_command_calls = mock_ssh.return_value.exec_command.call_args_list
