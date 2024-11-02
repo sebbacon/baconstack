@@ -118,13 +118,15 @@ def test_setup_with_apt_packages(mock_ssh):
     mock_stderr.read.return_value = b""
     mock_ssh_instance.exec_command.return_value = (None, mock_stdout, mock_stderr)
 
-    with patch("digitalocean.Manager") as mock_do_manager, \
-         patch("baconstack.cli.read_app_json") as mock_read_json:
+    with (
+        patch("digitalocean.Manager") as mock_do_manager,
+        patch("baconstack.cli.read_app_json") as mock_read_json,
+    ):
         # Set up mock DO manager
         mock_manager = mock_do_manager.return_value
         mock_domain = mock_manager.get_domain.return_value
         mock_domain.create_new_domain_record.return_value = None
-        
+
         # Configure mock read_app_json
         mock_read_json.return_value = {
             "dokku": {"apt-packages": ["postgresql-client", "redis-tools"]}
@@ -147,7 +149,6 @@ def test_setup_with_apt_packages(mock_ssh):
         # Verify APT packages were configured
         exec_command_calls = mock_ssh.return_value.exec_command.call_args_list
         expected_cmd = "dokku docker-options:add testapp build --build-arg DOKKU_APT_PACKAGES=postgresql-client redis-tools"
-        breakpoint()
         assert any(
             expected_cmd in call.args[0] for call in exec_command_calls
         ), "APT packages not configured correctly"
