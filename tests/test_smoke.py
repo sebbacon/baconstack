@@ -17,6 +17,8 @@ def wait_for_server(url, timeout=10, interval=0.5):
             if time.time() - start_time > timeout:
                 raise TimeoutError(f"Server did not respond within {timeout} seconds")
             time.sleep(interval)
+
+
 import pytest
 import tempfile
 import shutil
@@ -56,6 +58,7 @@ def test_flask_template(project_dir):
     assert result.exit_code == 0 or "pre-commit" in result.stdout
 
     # Move generated project to test directory
+    assert os.path.exists("test_project"), "'test_project/' was not created"
     shutil.move("test_project", project_dir + "/test_project")
     project_dir = os.path.join(project_dir, "test_project")
 
