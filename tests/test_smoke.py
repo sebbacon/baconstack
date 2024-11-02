@@ -150,18 +150,16 @@ def test_dokku_deployment(project_dir):
 
     finally:
         try:
-            # Cleanup: Remove the test app from Dokku
-            subprocess.run(
-                [
-                    "ssh",
-                    "seb@" + os.getenv("DOKKU_HOST"),
-                    f"dokku apps:destroy {test_app_name}",
-                    "--force",
-                ],
-                check=True,
+            # Cleanup: Remove the test app using CLI destroy command
+            runner = CliRunner()
+            result = runner.invoke(
+                app,
+                ["destroy", test_app_name, "--force"],
+                env={"DOKKU_HOST": os.getenv("DOKKU_HOST"), "DO_API_KEY": os.getenv("DO_API_KEY")},
             )
-        except subprocess.CalledProcessError:
-            print(f"Warning: Failed to cleanup test app {test_app_name}")
-
-        # Return to original directory
-        os.chdir(original_dir)
+            if result.exit_code != 0:
+                print(f"Warning: Failed to cleanup test app {test_app_name}")
+                print("Error:", result.stdout)
+        finally:
+            # Return to original directory
+            os.chdir(original_dir)
