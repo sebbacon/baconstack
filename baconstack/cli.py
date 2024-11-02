@@ -111,6 +111,10 @@ def new(
     healthcheck_url: str = typer.Option(
         None, help="Healthcheck.io URL for uptime monitoring"
     ),
+    description: str = typer.Option(None, help="Project description"),
+    author_name: str = typer.Option(None, help="Author name"),
+    author_email: str = typer.Option(None, help="Author email"),
+    use_loki: bool = typer.Option(True, help="Enable Loki logging"),
 ):
     """Create a new web project from template"""
     console.print(Panel(f"Creating new {framework} project: {project_name}"))
@@ -123,10 +127,10 @@ def new(
         "project_name": project_name,
         "domain": domain or f"{project_name}.example.com",
         "healthcheck_url": healthcheck_url or "",
-        "project_description": f"{framework.title()} Web App",
-        "author_name": "Seb Bacon",
-        "author_email": "seb.bacon@gmail.com",
-        "use_loki": True,
+        "project_description": description or f"{framework.title()} Web App",
+        "author_name": author_name or "Seb Bacon",
+        "author_email": author_email or "seb.bacon@gmail.com",
+        "use_loki": use_loki,
     }
 
     try:
