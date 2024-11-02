@@ -124,13 +124,14 @@ def new(
         "domain": domain or f"{project_name}.example.com",
         "healthcheck_url": healthcheck_url or "",
         "project_description": f"{framework.title()} Web App",
-        "author_name": "Test Author",
-        "author_email": "test@example.com",
-        "use_loki": False,
+        "author_name": "Seb Bacon",
+        "author_email": "seb.bacon@gmail.com",
+        "use_loki": True,
     }
 
     try:
         from copier import run_copy
+
         run_copy(
             template_repo,
             project_name,
