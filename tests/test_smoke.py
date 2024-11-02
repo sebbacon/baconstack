@@ -3,17 +3,13 @@ import subprocess
 import time
 import requests
 import pytest
-from copier import run_copy
 import tempfile
 import shutil
 import signal
 from pathlib import Path
+from typer.testing import CliRunner
+from baconstack.cli import app
 
-
-def get_template_repo():
-    return os.getenv(
-        "BACONSTACK_TEMPLATE", "https://github.com/sebbacon/baconstack-template"
-    )
 
 
 @pytest.fixture
@@ -26,22 +22,22 @@ def project_dir():
 
 
 def test_flask_template(project_dir):
-    # Generate project from template
-    run_copy(
-        get_template_repo(),
-        project_dir,
-        data={
-            "project_name": "test_project",
-            "framework": "flask",
-            "project_description": "Test Flask App",
-            "domain": "test.example.com",
-            "author_name": "Test Author",
-            "author_email": "test@example.com",
-            "use_loki": False,
-        },
-        unsafe=True,
-        vcs_ref="HEAD",
+    # Generate project using CLI
+    runner = CliRunner()
+    result = runner.invoke(
+        app,
+        [
+            "new",
+            "test_project",
+            "--framework", "flask",
+            "--domain", "test.example.com",
+        ],
     )
+    assert result.exit_code == 0
+
+    # Move generated project to test directory
+    shutil.move("test_project", project_dir + "/test_project")
+    project_dir = os.path.join(project_dir, "test_project")
 
     # Change to project directory
     original_dir = os.getcwd()
