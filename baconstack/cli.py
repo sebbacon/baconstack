@@ -123,15 +123,21 @@ def new(
         "project_name": project_name,
         "domain": domain or f"{project_name}.example.com",
         "healthcheck_url": healthcheck_url or "",
+        "project_description": f"{framework.title()} Web App",
+        "author_name": "Test Author",
+        "author_email": "test@example.com",
+        "use_loki": False,
     }
 
-    # Build copier command with proper data escaping
-    cmd = ["copier", "copy", template_repo, project_name, "--trust"]
-    for key, value in data.items():
-        cmd.extend(["-d", f"{key}={value}"])
-
     try:
-        subprocess.run(cmd, check=True)
+        from copier import run_copy
+        run_copy(
+            template_repo,
+            project_name,
+            data=data,
+            unsafe=True,
+            vcs_ref="HEAD",
+        )
     except subprocess.CalledProcessError as e:
         console.print(f"[red]Error creating project: {e}[/red]")
         raise typer.Exit(1)
