@@ -7,7 +7,7 @@ from baconstack.cli import app
 runner = CliRunner()
 
 
-from unittest.mock import patch
+from unittest.mock import patch, MagicMock
 
 def test_version():
     result = runner.invoke(app, ["--version"])
@@ -23,7 +23,11 @@ def test_version():
 def test_setup_command(mock_ssh, mock_do_manager):
     # Set up mock SSH client
     mock_ssh_instance = mock_ssh.return_value
-    mock_ssh_instance.exec_command.return_value = (None, None, None)
+    mock_stdout = MagicMock()
+    mock_stdout.read.return_value = b""
+    mock_stderr = MagicMock()
+    mock_stderr.read.return_value = b""
+    mock_ssh_instance.exec_command.return_value = (None, mock_stdout, mock_stderr)
 
     # Set up mock DO manager
     mock_manager = mock_do_manager.return_value
