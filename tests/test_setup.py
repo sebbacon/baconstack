@@ -1,5 +1,5 @@
 from io import StringIO
-from unittest.mock import patch
+from unittest.mock import patch, MagicMock
 
 import pytest
 from typer.testing import CliRunner
@@ -41,6 +41,7 @@ def test_basic_setup(mock_ssh):
                 "testapp",
                 "test.example.com",
                 "--dokku-host", "dokku.example.com",
+                "--do-token", "fake-token",
                 "--do-token", "fake-token"
             ],
         )
