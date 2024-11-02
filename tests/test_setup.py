@@ -137,9 +137,10 @@ def test_setup_with_apt_packages(mock_ssh):
                 "test.example.com",
                 "--dokku-host",
                 "dokku.example.com",
+                "--do-token",
+                "fake-token",
             ],
         )
-        breakpoint()
         assert result.exit_code == 0
 
         # Verify APT packages were configured
