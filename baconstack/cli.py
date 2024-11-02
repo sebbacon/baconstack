@@ -115,9 +115,7 @@ def new(
     """Create a new web project from template"""
     console.print(Panel(f"Creating new {framework} project: {project_name}"))
 
-    template_repo = os.getenv(
-        "BACONSTACK_TEMPLATE", "gh:yourusername/baconstack-template"
-    )
+    template_repo = os.getenv("BACONSTACK_TEMPLATE", "gh:sebbacon/baconstack-template")
 
     # Use copier to create project from template
     data = {
@@ -389,7 +387,9 @@ def destroy(
     ssh.connect(dokku_host)
 
     # Destroy the Dokku app
-    stdin, stdout, stderr = ssh.exec_command(f"sudo dokku apps:destroy {project_name} --force")
+    stdin, stdout, stderr = ssh.exec_command(
+        f"sudo dokku apps:destroy {project_name} --force"
+    )
     stdout_data = stdout.read().decode()
     stderr_data = stderr.read().decode()
 
@@ -403,19 +403,22 @@ def destroy(
     try:
         manager = digitalocean.Manager(token=do_token)
         domains = manager.get_all_domains()
-        
+
         for domain in domains:
             records = domain.get_records()
             for record in records:
                 if record.type == "CNAME" and record.name == project_name:
                     record.destroy()
-                    console.print(f"[green]Removed DNS record for {project_name}.{domain.name}[/green]")
+                    console.print(
+                        f"[green]Removed DNS record for {project_name}.{domain.name}[/green]"
+                    )
                     return
 
         console.print("[yellow]No matching DNS records found[/yellow]")
 
     except Exception as e:
         console.print(f"[red]Error removing DNS record: {str(e)}[/red]")
+
 
 @app.command()
 def setup_loki(
