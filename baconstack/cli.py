@@ -218,9 +218,13 @@ def setup(
 
     for cmd in commands:
         stdin, stdout, stderr = ssh.exec_command(f"sudo {cmd}")
-        console.print(stdout.read().decode())
-        if err := stderr.read():
-            console.print(f"[red]Error running {cmd}[/red] {err}")
+        stdout_data = stdout.read().decode()
+        stderr_data = stderr.read().decode()
+        
+        if stdout_data:
+            console.print(stdout_data)
+        if stderr_data:
+            console.print(f"[red]Error running {cmd}[/red] {stderr_data}")
 
     # Set up healthcheck
     if healthcheck_url or app_config.get("healthchecks"):

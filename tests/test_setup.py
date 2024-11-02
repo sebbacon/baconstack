@@ -73,6 +73,11 @@ def test_setup_error_handling(mock_ssh):
     mock_stderr = StringIO()
     mock_stderr.read = lambda: b"Error: App already exists"
     mock_stdout.read = lambda: b""
+    
+    # Mock all exec_command calls to return error
+    def mock_exec(*args, **kwargs):
+        return mock_stdin, mock_stdout, mock_stderr
+    mock_ssh.return_value.exec_command = mock_exec
         
     mock_ssh.return_value.exec_command.return_value = (
         mock_stdin,
@@ -93,6 +98,7 @@ def test_setup_error_handling(mock_ssh):
     # Command should complete but show error message
     assert result.exit_code == 0
     assert "Error running" in result.stdout
+    assert "Error: App already exists" in result.stdout
 
 
 def test_setup_with_apt_packages(mock_ssh):
