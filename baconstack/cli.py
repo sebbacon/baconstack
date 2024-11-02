@@ -158,7 +158,7 @@ def setup(
     dokku_user: str = typer.Option(
         "seb", help="Username for Dokku host SSH connection"
     ),
-    do_token: str = typer.Option(None, envvar="DO_API_KEY"),
+    do_token: str = typer.Option(..., envvar="DO_API_KEY", help="DigitalOcean API token"),
     healthcheck_url: str = typer.Option(None, envvar="HEALTHCHECK_URL"),
 ):
     """Set up Dokku app and configure domain"""
@@ -178,29 +178,30 @@ def setup(
         console.print(f"Setting up APT packages: {', '.join(apt_packages)}")
         setup_apt_packages(ssh, project_name, apt_packages)
 
-    # Set up DNS if DO token provided
-    if do_token:
-        manager = digitalocean.Manager(token=do_token)
-        domain_name = ".".join(domain.split(".")[-2:])
-        record_name = domain.split(".")[0]
+    # Set up DNS with DigitalOcean
+    manager = digitalocean.Manager(token=do_token)
+    domain_name = ".".join(domain.split(".")[-2:])
+    record_name = domain.split(".")[0]
 
-        # Get domain
-        try:
-            do_domain = manager.get_domain(domain_name)
-        except Exception:
-            console.print(
-                f"[yellow]Domain {domain_name} not found in DigitalOcean[/yellow]"
-            )
-            return
+    # Get domain
+    try:
+        do_domain = manager.get_domain(domain_name)
+    except Exception as e:
+        console.print(f"[red]Error: Domain {domain_name} not found in DigitalOcean[/red]")
+        console.print(f"[red]Details: {str(e)}[/red]")
+        raise typer.Exit(1)
 
-        # Create CNAME record
+    # Create CNAME record
+    try:
         do_domain.create_new_domain_record(
             type="CNAME",
             name=record_name,
             data=dokku_host + ".",
         )
-
         console.print(f"[green]Created DNS record for {domain}[/green]")
+    except Exception as e:
+        console.print(f"[red]Error creating DNS record: {str(e)}[/red]")
+        raise typer.Exit(1)
 
     # Basic Dokku setup
     commands = [
