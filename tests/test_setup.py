@@ -103,8 +103,22 @@ def test_setup_error_handling(mock_ssh):
         assert "Error: App already exists" in result.stdout
 
 
-def test_setup_with_apt_packages(mock_ssh):
+@patch("digitalocean.Manager")
+def test_setup_with_apt_packages(mock_ssh, mock_do_manager):
     """Test setup with APT packages configuration"""
+    # Set up mock SSH client
+    mock_ssh_instance = mock_ssh.return_value
+    mock_stdout = MagicMock()
+    mock_stdout.read.return_value = b""
+    mock_stderr = MagicMock()
+    mock_stderr.read.return_value = b""
+    mock_ssh_instance.exec_command.return_value = (None, mock_stdout, mock_stderr)
+
+    # Set up mock DO manager
+    mock_manager = mock_do_manager.return_value
+    mock_domain = mock_manager.get_domain.return_value
+    mock_domain.create_new_domain_record.return_value = None
+
     with patch("baconstack.cli.read_app_json") as mock_read_json:
         mock_read_json.return_value = {
             "dokku": {
