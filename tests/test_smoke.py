@@ -5,6 +5,14 @@ import requests
 from urllib.error import URLError
 from urllib.request import urlopen
 
+import pytest
+import tempfile
+import shutil
+import signal
+from pathlib import Path
+from typer.testing import CliRunner
+from baconstack.cli import app
+
 
 def wait_for_server(url, timeout=10, interval=0.5):
     """Wait for server to start responding, with timeout"""
@@ -19,15 +27,6 @@ def wait_for_server(url, timeout=10, interval=0.5):
             if time.time() - start_time > timeout:
                 raise TimeoutError(f"Server did not respond within {timeout} seconds")
             time.sleep(interval)
-
-
-import pytest
-import tempfile
-import shutil
-import signal
-from pathlib import Path
-from typer.testing import CliRunner
-from baconstack.cli import app
 
 
 @pytest.fixture
@@ -98,7 +97,7 @@ def test_flask_template(project_dir):
 
 
 @pytest.mark.skipif(
-    not os.getenv("DOKKU_HOST"),
+    not os.getenv("DOKKU_HOST") and not os.getenv("DO_API_KEY"),
     reason="DOKKU_HOST and DO_API_KEY environment variables required for deployment test",
 )
 def test_dokku_deployment(project_dir):
@@ -115,11 +114,9 @@ def test_dokku_deployment(project_dir):
             "flask",
             "--domain",
             f"{test_app_name}.{os.getenv('DOKKU_HOST')}",
-            "--dokku-user",
-            os.getenv("DOKKU_HOST_USER", "dokku"),
         ],
     )
-    assert result.exit_code == 0
+    assert result.exit_code == 0, f"Error: {result.output}"
 
     # Move generated project to test directory
     shutil.move(test_app_name, project_dir + f"/{test_app_name}")
@@ -137,6 +134,7 @@ def test_dokku_deployment(project_dir):
             "DOKKU_HOST_USER": os.getenv("DOKKU_HOST_USER", "dokku"),
             "DO_API_KEY": os.getenv("DO_API_KEY"),
         }
+        breakpoint()
         subprocess.run(["just", "setup-remote"], check=True, env=env)
         subprocess.run(["just", "deploy"], check=True, env=env)
         # Wait for deployment to complete and server to respond
