@@ -239,14 +239,12 @@ def setup(
         setup_healthcheck(project_name, healthcheck_url, ssh)
 
 
-@app.command()
-def env(ctx: typer.Context):
-    """Manage environment variables"""
-    ctx.info_name = "env"
-    app_env = typer.Typer()
+# Create env command group
+app_env = typer.Typer(help="Manage environment variables")
+app.add_typer(app_env, name="env")
 
-    @app_env.command()
-    def init(
+@app_env.command()
+def init(
         project_dir: str = typer.Argument(".", help="Project directory"),
     ):
         """Initialize .env file from template"""
@@ -279,8 +277,8 @@ def env(ctx: typer.Context):
 
         console.print(table)
 
-    @app_env.command()
-    def sync(
+@app_env.command()
+def sync(
         project_name: str,
         dokku_host: str = typer.Option(..., envvar="DOKKU_HOST"),
         env_file: str = typer.Option(".env", help="Path to .env file"),
@@ -344,8 +342,8 @@ def env(ctx: typer.Context):
 
         console.print(table)
 
-    @app_env.command()
-    def show(
+@app_env.command()
+def show(
         project_name: str,
         dokku_host: str = typer.Option(..., envvar="DOKKU_HOST"),
     ):
@@ -379,7 +377,6 @@ def env(ctx: typer.Context):
 
         console.print(table)
 
-    app_env()
 
 
 @app.command()
