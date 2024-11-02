@@ -84,33 +84,11 @@ def setup_apt_packages(ssh: paramiko.SSHClient, project_name: str, packages: lis
         console.print(f"[red]Error configuring APT packages[/red]: {stderr_data}")
 
 
-def setup_healthcheck(
-    project_name: str,
-    healthcheck_url: str,
-    ssh: paramiko.SSHClient,
-):
-    """Set up healthcheck monitoring"""
-    # Configure zero-downtime deployment checks
-    commands = [
-        f"dokku checks:enable {project_name}",
-        f"dokku checks:run {project_name}",
-    ]
-
-    for cmd in commands:
-        stdin, stdout, stderr = ssh.exec_command(f"sudo {cmd}")
-        console.print(stdout.read().decode())
-        if stderr.read():
-            console.print(f"[red]Error running {cmd}[/red]")
-
-
 @app.command()
 def new(
     project_name: str,
     framework: str = typer.Option("fastapi", help="Web framework to use"),
     domain: str = typer.Option(None, help="Domain for deployment"),
-    healthcheck_url: str = typer.Option(
-        None, help="Healthcheck.io URL for uptime monitoring"
-    ),
     description: str = typer.Option(None, help="Project description"),
     author_name: str = typer.Option(None, help="Author name"),
     author_email: str = typer.Option(None, help="Author email"),
@@ -126,7 +104,6 @@ def new(
         "framework": framework,
         "project_name": project_name,
         "domain": domain or f"{project_name}.example.com",
-        "healthcheck_url": healthcheck_url or "",
         "project_description": description or f"{framework.title()} Web App",
         "author_name": author_name or "Seb Bacon",
         "author_email": author_email or "seb.bacon@gmail.com",
@@ -143,11 +120,11 @@ def new(
             unsafe=True,
             vcs_ref="HEAD",
         )
-        
+
         # Skip pre-commit if requested
         if os.getenv("SKIP_PRE_COMMIT"):
             return
-            
+
     except subprocess.CalledProcessError as e:
         console.print(f"[red]Error creating project: {e}[/red]")
         raise typer.Exit(1)
@@ -164,7 +141,6 @@ def setup(
     do_token: str = typer.Option(
         ..., envvar="DO_API_KEY", help="DigitalOcean API token"
     ),
-    healthcheck_url: str = typer.Option(None, envvar="HEALTHCHECK_URL"),
 ):
     """Set up Dokku app and configure domain"""
     console.print(Panel(f"Setting up {project_name} on {dokku_host}"))
@@ -234,149 +210,141 @@ def setup(
         if stderr_data:
             console.print(f"[red]Error running {cmd}[/red] {stderr_data}")
 
-    # Set up healthcheck
-    if healthcheck_url or app_config.get("healthchecks"):
-        setup_healthcheck(project_name, healthcheck_url, ssh)
-
 
 # Create env command group
 app_env = typer.Typer(help="Manage environment variables")
 app.add_typer(app_env, name="env")
 
+
 @app_env.command()
 def init(
-        project_dir: str = typer.Argument(".", help="Project directory"),
-    ):
-        """Initialize .env file from template"""
-        project_path = Path(project_dir)
-        env_example = project_path / ".env.example"
-        env_file = project_path / ".env"
+    project_dir: str = typer.Argument(".", help="Project directory"),
+):
+    """Initialize .env file from template"""
+    project_path = Path(project_dir)
+    env_example = project_path / ".env.example"
+    env_file = project_path / ".env"
 
-        if env_file.exists():
-            if not typer.confirm("A .env file already exists. Overwrite?"):
-                raise typer.Abort()
-
-        if not env_example.exists():
-            console.print("[red]No .env.example file found[/red]")
+    if env_file.exists():
+        if not typer.confirm("A .env file already exists. Overwrite?"):
             raise typer.Abort()
 
-        # Copy template to .env
-        env_file.write_text(env_example.read_text())
-        console.print("[green]Created .env file from template[/green]")
-        console.print("\nPlease edit the .env file and update the values.")
+    if not env_example.exists():
+        console.print("[red]No .env.example file found[/red]")
+        raise typer.Abort()
 
-        # Show current variables
-        env_vars = load_env_file(env_file)
-        table = Table(title="Environment Variables")
-        table.add_column("Variable")
-        table.add_column("Value")
+    # Copy template to .env
+    env_file.write_text(env_example.read_text())
+    console.print("[green]Created .env file from template[/green]")
+    console.print("\nPlease edit the .env file and update the values.")
 
-        filtered_vars = filter_sensitive_vars(env_vars)
-        for key, value in filtered_vars.items():
-            table.add_row(key, value or "[red]empty[/red]")
+    # Show current variables
+    env_vars = load_env_file(env_file)
+    table = Table(title="Environment Variables")
+    table.add_column("Variable")
+    table.add_column("Value")
 
-        console.print(table)
+    filtered_vars = filter_sensitive_vars(env_vars)
+    for key, value in filtered_vars.items():
+        table.add_row(key, value or "[red]empty[/red]")
+
+    console.print(table)
+
 
 @app_env.command()
 def sync(
-        project_name: str,
-        dokku_host: str = typer.Option(..., envvar="DOKKU_HOST"),
-        env_file: str = typer.Option(".env", help="Path to .env file"),
-    ):
-        """Sync local environment variables to Dokku"""
-        env_path = Path(env_file)
-        if not env_path.exists():
-            console.print(f"[red]No .env file found at {env_file}[/red]")
-            raise typer.Abort()
+    project_name: str,
+    dokku_host: str = typer.Option(..., envvar="DOKKU_HOST"),
+    env_file: str = typer.Option(".env", help="Path to .env file"),
+):
+    """Sync local environment variables to Dokku"""
+    env_path = Path(env_file)
+    if not env_path.exists():
+        console.print(f"[red]No .env file found at {env_file}[/red]")
+        raise typer.Abort()
 
-        # Load environment variables
-        env_vars = load_env_file(env_path)
+    # Load environment variables
+    env_vars = load_env_file(env_path)
 
-        # Connect to Dokku host
-        ssh = paramiko.SSHClient()
-        ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-        ssh.connect(dokku_host)
+    # Connect to Dokku host
+    ssh = paramiko.SSHClient()
+    ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+    ssh.connect(dokku_host)
 
-        # Clear existing config
-        stdin, stdout, stderr = ssh.exec_command(
-            f"sudo dokku config:clear {project_name}"
-        )
-        if stderr.read():
-            console.print("[red]Error clearing existing configuration[/red]")
-            return
+    # Clear existing config
+    stdin, stdout, stderr = ssh.exec_command(f"sudo dokku config:clear {project_name}")
+    if stderr.read():
+        console.print("[red]Error clearing existing configuration[/red]")
+        return
 
-        # Set new configuration
-        config_cmd = f"sudo dokku config:set {project_name}"
-        for key, value in env_vars.items():
-            if value:  # Only set non-empty values
-                config_cmd += f' {key}="{value}"'
+    # Set new configuration
+    config_cmd = f"sudo dokku config:set {project_name}"
+    for key, value in env_vars.items():
+        if value:  # Only set non-empty values
+            config_cmd += f' {key}="{value}"'
 
-        stdin, stdout, stderr = ssh.exec_command(config_cmd)
-        if stderr.read():
-            console.print("[red]Error setting configuration[/red]")
-            return
+    stdin, stdout, stderr = ssh.exec_command(config_cmd)
+    if stderr.read():
+        console.print("[red]Error setting configuration[/red]")
+        return
 
-        # Show current configuration
-        stdin, stdout, stderr = ssh.exec_command(
-            f"sudo dokku config:show {project_name}"
-        )
-        config_output = stdout.read().decode()
+    # Show current configuration
+    stdin, stdout, stderr = ssh.exec_command(f"sudo dokku config:show {project_name}")
+    config_output = stdout.read().decode()
 
-        table = Table(title=f"Dokku Configuration for {project_name}")
-        table.add_column("Variable")
-        table.add_column("Value")
+    table = Table(title=f"Dokku Configuration for {project_name}")
+    table.add_column("Variable")
+    table.add_column("Value")
 
-        for line in config_output.split("\n"):
-            if ":" in line:
-                key, value = line.split(":", 1)
-                if key.strip():
-                    filtered_value = (
-                        "*" * 8
-                        if any(
-                            pattern in key.upper()
-                            for pattern in ["KEY", "SECRET", "PASSWORD", "CREDENTIAL"]
-                        )
-                        else value.strip()
+    for line in config_output.split("\n"):
+        if ":" in line:
+            key, value = line.split(":", 1)
+            if key.strip():
+                filtered_value = (
+                    "*" * 8
+                    if any(
+                        pattern in key.upper()
+                        for pattern in ["KEY", "SECRET", "PASSWORD", "CREDENTIAL"]
                     )
-                    table.add_row(key.strip(), filtered_value)
+                    else value.strip()
+                )
+                table.add_row(key.strip(), filtered_value)
 
-        console.print(table)
+    console.print(table)
+
 
 @app_env.command()
 def show(
-        project_name: str,
-        dokku_host: str = typer.Option(..., envvar="DOKKU_HOST"),
-    ):
-        """Show current Dokku environment variables"""
-        ssh = paramiko.SSHClient()
-        ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-        ssh.connect(dokku_host)
+    project_name: str,
+    dokku_host: str = typer.Option(..., envvar="DOKKU_HOST"),
+):
+    """Show current Dokku environment variables"""
+    ssh = paramiko.SSHClient()
+    ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+    ssh.connect(dokku_host)
 
-        stdin, stdout, stderr = ssh.exec_command(
-            f"sudo dokku config:show {project_name}"
-        )
-        config_output = stdout.read().decode()
+    stdin, stdout, stderr = ssh.exec_command(f"sudo dokku config:show {project_name}")
+    config_output = stdout.read().decode()
 
-        table = Table(title=f"Dokku Configuration for {project_name}")
-        table.add_column("Variable")
-        table.add_column("Value")
+    table = Table(title=f"Dokku Configuration for {project_name}")
+    table.add_column("Variable")
+    table.add_column("Value")
 
-        for line in config_output.split("\n"):
-            if ":" in line:
-                key, value = line.split(":", 1)
-                if key.strip():
-                    filtered_value = (
-                        "*" * 8
-                        if any(
-                            pattern in key.upper()
-                            for pattern in ["KEY", "SECRET", "PASSWORD", "CREDENTIAL"]
-                        )
-                        else value.strip()
+    for line in config_output.split("\n"):
+        if ":" in line:
+            key, value = line.split(":", 1)
+            if key.strip():
+                filtered_value = (
+                    "*" * 8
+                    if any(
+                        pattern in key.upper()
+                        for pattern in ["KEY", "SECRET", "PASSWORD", "CREDENTIAL"]
                     )
-                    table.add_row(key.strip(), filtered_value)
+                    else value.strip()
+                )
+                table.add_row(key.strip(), filtered_value)
 
-        console.print(table)
-
+    console.print(table)
 
 
 @app.command()

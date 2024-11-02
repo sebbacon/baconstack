@@ -9,6 +9,7 @@ pip install baconstack
 ```
 
 Optional: Install pre-commit hooks for development:
+
 ```bash
 pip install pre-commit
 pre-commit install
@@ -20,18 +21,25 @@ pre-commit install
 - `DO_API_KEY`: DigitalOcean API token (for DNS management)
 
 Optional:
+
 - `HEALTHCHECK_URL`: URL for uptime monitoring
 - `BACONSTACK_TEMPLATE`: Custom template repository (defaults to gh:sebbacon/baconstack-template)
 
 ## Quick Start
 
-```bash
-export DOKKU_HOST=your.dokku.host
-export DO_API_KEY=your_digitalocean_token
+You'll need to [set up a running dokku server](https://dokku.com/docs/getting-started/installation/). You should set up your ssh so you have passwordless login, and root-equivalent access to the `dokku` command for that account, for example with this `sudoer` config:
 
-baconstack new myproject
+    seb ALL=(ALL) NOPASSWD:SETENV: /usr/bin/dokku
+
+Then, on your development machine:
+
+```bash
+baconstack new myproject --framework flask --domain myproject.your.dokku.host
 cd myproject
-baconstack setup myproject myproject.example.com
+just install
+
+# Sets up a new `myproject` dokku up on the dokku host, including ssl
+just setup-remote
 ```
 
 ## Usage
@@ -39,7 +47,7 @@ baconstack setup myproject myproject.example.com
 ### Environment Variables
 
 ```bash
-# Initialize from template
+# Initialize from template at .env.example
 baconstack env init
 
 # Show current Dokku environment variables
@@ -90,6 +98,7 @@ just bump minor
 ## Template Customization
 
 Projects are created from templates with these configurable options:
+
 - Framework selection (fastapi/flask/django)
 - Domain configuration
 - Healthcheck URL
