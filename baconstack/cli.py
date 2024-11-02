@@ -7,15 +7,16 @@ from pathlib import Path
 import digitalocean
 import paramiko
 import typer
-from dotenv import dotenv_values
+from dotenv import load_dotenv, dotenv_values
 from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
 
-app = typer.Typer()
-console = Console()
+# Load environment variables from .env file at startup
+load_dotenv()
 
 app = typer.Typer()
+console = Console()
 
 
 def version_callback(value: bool):
@@ -134,12 +135,12 @@ def new(
 def setup(
     project_name: str,
     domain: str,
-    dokku_host: str = typer.Option(..., envvar="DOKKU_HOST"),
+    dokku_host: str = typer.Option(None, envvar="DOKKU_HOST"),
     dokku_user: str = typer.Option(
-        ..., envvar="DOKKU_HOST_USER", help="Username for Dokku host SSH connection"
+        None, envvar="DOKKU_HOST_USER", help="Username for Dokku host SSH connection"
     ),
     do_token: str = typer.Option(
-        ..., envvar="DO_API_KEY", help="DigitalOcean API token"
+        None, envvar="DO_API_KEY", help="DigitalOcean API token"
     ),
 ):
     """Set up Dokku app and configure domain"""
@@ -254,8 +255,8 @@ def init(
 @app_env.command()
 def sync(
     project_name: str,
-    dokku_host: str = typer.Option(..., envvar="DOKKU_HOST"),
-    dokku_user: str = typer.Option(..., envvar="DOKKU_HOST_USER"),
+    dokku_host: str = typer.Option(None, envvar="DOKKU_HOST"),
+    dokku_user: str = typer.Option(None, envvar="DOKKU_HOST_USER"),
     env_file: str = typer.Option(".env", help="Path to .env file"),
 ):
     """Sync local environment variables to Dokku"""
@@ -317,7 +318,7 @@ def sync(
 @app_env.command()
 def show(
     project_name: str,
-    dokku_host: str = typer.Option(..., envvar="DOKKU_HOST"),
+    dokku_host: str = typer.Option(None, envvar="DOKKU_HOST"),
     dokku_user: str = typer.Option(..., envvar="DOKKU_HOST_USER"),
 ):
     """Show current Dokku environment variables"""
@@ -352,8 +353,8 @@ def show(
 @app.command()
 def destroy(
     project_name: str,
-    dokku_host: str = typer.Option(..., envvar="DOKKU_HOST"),
-    do_token: str = typer.Option(..., envvar="DO_API_KEY"),
+    dokku_host: str = typer.Option(None, envvar="DOKKU_HOST"),
+    do_token: str = typer.Option(None, envvar="DO_API_KEY"),
     force: bool = typer.Option(False, "--force", help="Skip confirmation prompt"),
 ):
     """Destroy a Dokku app and remove its DNS record"""
