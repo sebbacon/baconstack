@@ -83,7 +83,9 @@ def test_flask_template(project_dir):
                     return True
                 except URLError:
                     if time.time() - start_time > timeout:
-                        raise TimeoutError(f"Server did not respond within {timeout} seconds")
+                        raise TimeoutError(
+                            f"Server did not respond within {timeout} seconds"
+                        )
                     time.sleep(interval)
 
         try:
@@ -137,10 +139,8 @@ def test_dokku_deployment(project_dir):
         # Set up remote and deploy
         subprocess.run(["just", "setup-remote"], check=True)
         subprocess.run(["just", "deploy"], check=True)
-        print(11111)
         # Wait for deployment to complete
         time.sleep(8)  # Give it some time to deploy
-        print(22222)
         # Test if the app is responding
         url = f"https://{test_app_name}.{os.getenv('TEST_DOMAIN')}"
         response = requests.get(url, timeout=30)
