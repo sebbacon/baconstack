@@ -11,7 +11,6 @@ from typer.testing import CliRunner
 from baconstack.cli import app
 
 
-
 @pytest.fixture
 def project_dir():
     # Create a temporary directory for the test project
@@ -29,10 +28,12 @@ def test_flask_template(project_dir):
         [
             "new",
             "test_project",
-            "--framework", "flask",
-            "--domain", "test.example.com",
+            "--framework",
+            "flask",
+            "--domain",
+            "test.example.com",
         ],
-        env={"COPIER_NOT_A_TTY": "1", "SKIP_PRE_COMMIT": "1"}
+        env={"COPIER_NOT_A_TTY": "1", "SKIP_PRE_COMMIT": "1"},
     )
     if result.exit_code != 0:
         print("CLI Output:", result.stdout)
@@ -58,6 +59,8 @@ def test_flask_template(project_dir):
             activate_cmd = f"source {activate_script} && "
 
         # Run tests first
+        subprocess.run(activate_cmd + "just install", shell=True, check=True)
+
         subprocess.run(activate_cmd + "just test", shell=True, check=True)
 
         # Start the Flask app in the background
@@ -100,8 +103,10 @@ def test_dokku_deployment(project_dir):
         [
             "new",
             test_app_name,
-            "--framework", "flask",
-            "--domain", f"{test_app_name}.{os.getenv('TEST_DOMAIN')}",
+            "--framework",
+            "flask",
+            "--domain",
+            f"{test_app_name}.{os.getenv('TEST_DOMAIN')}",
         ],
     )
     assert result.exit_code == 0
