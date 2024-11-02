@@ -98,7 +98,7 @@ def test_setup_error_handling(mock_ssh):
         
         # Command should complete but show error message
         assert result.exit_code == 0
-        assert "Error running sudo dokku apps:create" in result.stdout
+        assert "Error running dokku apps:create testapp" in result.stdout
         assert "Error: App already exists" in result.stdout
 
 
